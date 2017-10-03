@@ -45,6 +45,7 @@ the use of this software, even if advised of the possibility of such damage.
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <is/is.hpp>
@@ -57,6 +58,7 @@ using namespace std;
 using namespace cv;
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 static bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameters>& params) {
   FileStorage fs(filename, FileStorage::READ);
@@ -85,18 +87,24 @@ static bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameter
   return true;
 }
 
-static bool saveCameraParams(const string& entity, Size imageSize, float aspectRatio, int flags,
-                             const Mat& cameraMatrix, const Mat& distCoeffs, double totalAvgErr) {
+static bool saveCameraParams(const string& entity, const std::vector<cv::Mat>& images, Size imageSize,
+                             float aspectRatio, int flags, const Mat& cameraMatrix, const Mat& distCoeffs,
+                             double totalAvgErr) {
   time_t tt;
   time(&tt);
   struct tm* t2 = localtime(&tt);
   char buf[1024];
   strftime(buf, sizeof(buf) - 1, "%c", t2);
 
-  std::string filename =
-      fmt::format("{}-{}-{}-{}-{}.yml", entity, t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_min);
+  std::string directory =
+      fmt::format("{}-{}-{}-{}-{}", entity, t2->tm_year + 1900, t2->tm_mon, t2->tm_mday, t2->tm_min);
 
-  FileStorage fs(filename, FileStorage::WRITE);
+  if (!fs::create_directory(directory)) {
+    is::log::error("Failed to create directory \"{}\"", directory);
+    return false;
+  }
+
+  FileStorage fs(fmt::format("{}/parameters.yml", directory), FileStorage::WRITE);
   if (!fs.isOpened())
     return false;
 
@@ -117,6 +125,10 @@ static bool saveCameraParams(const string& entity, Size imageSize, float aspectR
   fs << "camera_matrix" << cameraMatrix;
   fs << "distortion_coefficients" << distCoeffs;
   fs << "avg_reprojection_error" << totalAvgErr;
+
+  for (std::size_t i = 0; i < images.size(); ++i) {
+    cv::imwrite(fmt::format("{}/{}.png", directory, i), images[i]);
+  }
 
   return true;
 }
@@ -153,15 +165,25 @@ int main(int argc, char* argv[]) {
           "DICT_4X4_1000=3, DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7, "
           "DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11, DICT_7X7_50=12,"
           "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16");
-  options("marker-length,ml", po::value<float>(&marker_length)->required(), "marker side length in meters");
-  options("square-length,sl", po::value<float>(&square_length)->required(), "square side length in meters");
-  options("width,w", po::value<int>(&squares_x)->required(), "number of squares in X direction");
-  options("height,h", po::value<int>(&squares_y)->required(), "number of squares in Y direction");
-  options("detector-param,dp", po::value<std::string>(&detector_params_path),
+  options("marker-length", po::value<float>(&marker_length)->required(), "marker side length in meters");
+  options("square-length", po::value<float>(&square_length)->required(), "square side length in meters");
+  options("width", po::value<int>(&squares_x)->required(), "number of squares in X direction");
+  options("height", po::value<int>(&squares_y)->required(), "number of squares in Y direction");
+  options("detector-params", po::value<std::string>(&detector_params_path),
           "path aruco algorithm yml configuration file");
   options("refind-strategy", po::bool_switch(&refind_strategy)->default_value(false), "");
   options("show-images", po::bool_switch(&show_images)->default_value(false),
           "Show detected chessboard corners after calibration");
+
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, description), vm);
+
+  std::string config_path = "charuco-intrinsic-calib.conf";
+  std::ifstream config_file(config_path);
+  if (config_file.good()) {
+    is::log::info("Reading config file {} ...", config_path);
+    po::store(po::parse_config_file(config_file, description), vm);
+  }
 
   auto enviroment_map = [](std::string env) -> std::string {
     std::string prefix = "IS_";
@@ -171,16 +193,9 @@ int main(int argc, char* argv[]) {
     boost::to_lower(env);
     return env.substr(prefix.size());
   };
-
-  std::ifstream config_file("options.conf");
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, description), vm);
-  if (config_file.good()) {
-    po::store(po::parse_config_file(config_file, description), vm);
-  }
   po::store(po::parse_environment(description, enviroment_map), vm);
-  po::notify(vm);
 
+  po::notify(vm);
   if (vm.count("help") || !vm.count("source-entity")) {
     std::cout << description << std::endl;
     return 1;
@@ -224,7 +239,7 @@ int main(int argc, char* argv[]) {
   auto is = is::connect("amqp://edge.is:30000");
   auto client = is::make_client(is);
   is::msg::common::SamplingRate rate;
-  rate.rate = 20.0;
+  rate.rate = 10.0;
   is::msg::camera::Configuration config;
   config.sampling_rate = rate;
   config.image_type = is::msg::camera::image_type::gray;
@@ -262,14 +277,16 @@ int main(int argc, char* argv[]) {
       aruco::interpolateCornersCharuco(corners, ids, image, charucoboard, currentCharucoCorners, currentCharucoIds);
 
     // draw results
-    image.copyTo(imageCopy);
+    // image.copyTo(imageCopy);
+    cv::cvtColor(image, imageCopy, CV_GRAY2BGR);
     if (ids.size() > 0)
       aruco::drawDetectedMarkers(imageCopy, corners);
 
     if (currentCharucoCorners.total() > 0)
       aruco::drawDetectedCornersCharuco(imageCopy, currentCharucoCorners, currentCharucoIds);
 
-    putText(imageCopy, "'ESC' to finish and calibrate", Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 2);
+    putText(imageCopy, fmt::format("'ESC' to finish and calibrate. Captured: {}", allIds.size()), Point(10, 50),
+            FONT_HERSHEY_SIMPLEX, 1.25, Scalar(0, 255, 0), 2);
 
     imshow("Source", imageCopy);
     char key = (char)waitKey(1);
@@ -353,7 +370,8 @@ int main(int argc, char* argv[]) {
                                            distCoeffs, rvecs, tvecs, calibrationFlags);
   is::log::info("Reprojection error - Final: {} | ArUco: {}", repError, arucoRepErr);
 
-  bool saveOk = saveCameraParams(source_entity, imgSize, aspectRatio, calibrationFlags, cameraMatrix, distCoeffs, repError);
+  bool saveOk = saveCameraParams(source_entity, filteredImages, imgSize, aspectRatio, calibrationFlags, cameraMatrix,
+                                 distCoeffs, repError);
   if (!saveOk) {
     is::log::error("Cannot save output file");
   }
