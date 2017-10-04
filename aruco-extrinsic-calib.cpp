@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
   int dictionary_id;
   int marker_id;
   float marker_length;
+  float axis_offset;
 
   po::options_description description("Allowed options");
   auto&& options = description.add_options();
@@ -44,6 +45,7 @@ int main(int argc, char* argv[]) {
           "DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15, DICT_ARUCO_ORIGINAL = 16");
   options("marker-id,m", po::value<int>(&marker_id)->required(), "id of the marker to be tracked");
   options("marker-length,l", po::value<float>(&marker_length)->required(), "marker side length in meters");
+  options("axis-offset,o", po::value<float>(&axis_offset)->default_value(0), "");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, description), vm);
@@ -117,14 +119,24 @@ int main(int argc, char* argv[]) {
       cv::aruco::drawAxis(image, camera_matrix, distortion_coefficients, rvecs[index], tvecs[index],
                           marker_length * 0.5f);
 
+      cv::Mat offset_translation = cv::Mat::eye(4, 4, CV_64F);
+      offset_translation.at<double>(0,3) = axis_offset;
+      offset_translation.at<double>(1,3) = axis_offset;
+
       cv::Mat rotation, extrinsic;
       cv::Rodrigues(rvecs[index], rotation);
       cv::hconcat(rotation, tvecs[index], extrinsic);
       cv::Mat lastRow = (cv::Mat_<double>(1, 4) << 0, 0, 0, 1);
       cv::vconcat(extrinsic, lastRow, extrinsic);
       std::cout << "Extrinsic: " << extrinsic << std::endl;
+       
+      if (std::fabs(axis_offset) > 1e-6) {
+        std::cout << "Offset: " << offset_translation << std::endl;
+        extrinsic = extrinsic * offset_translation;
+        std::cout << "Extrinsic w/ offset: " << extrinsic << std::endl;
+      }
       cv::imshow("Extrinsic", image);
-
+      
       auto key = waitKeyEx(0);
       if (key == 27) {  // leave
         return 1;
