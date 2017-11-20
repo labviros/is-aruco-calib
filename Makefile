@@ -1,16 +1,26 @@
-COMPILER = g++
-FLAGS = -O3 -std=c++14 -Wall -Werror -Wextra
+CXX = clang++
+CXXFLAGS += -std=c++1z -Wall -Werror# -O2
+DEBUGFLAGS = -g  -fsanitize=address -fno-omit-frame-pointer 
+LDFLAGS += -L/usr/local/lib -I/usr/local/include `pkg-config --libs sfml-all protobuf librabbitmq libSimpleAmqpClient opencv`\
+           -Wl,--no-as-needed -Wl,--as-needed -ldl -lboost_system -lboost_chrono -lboost_program_options\
+					 -lboost_filesystem -lismsgs
+PROTOC = protoc
 
-SO_DEPS = $(shell pkg-config --libs --cflags sfml-all libSimpleAmqpClient msgpack librabbitmq opencv theoradec theoraenc)
-SO_DEPS += -lboost_program_options -lpthread  -lboost_filesystem -lboost_system
+LOCAL_PROTOS_PATH = ./msgs/
+
+vpath %.proto $(LOCAL_PROTOS_PATH)
 
 all: charuco-intrinsic-calib aruco-extrinsic-calib
 
+charuco-intrinsic-calib: charuco-intrinsic-calib.o 
+	$(CXX) $(DEBUGFLAGS) $^ $(LDFLAGS) -o $@
+
+aruco-extrinsic-calib: aruco-extrinsic-calib.o 
+	$(CXX) $(DEBUGFLAGS) $^ $(LDFLAGS) -o $@
+
+.PRECIOUS: %.pb.cc
+%.pb.cc: %.proto
+	$(PROTOC) -I $(LOCAL_PROTOS_PATH) --cpp_out=. $<
+
 clean:
-	rm charuco-intrinsic-calib aruco-extrinsic-calib
-
-charuco-intrinsic-calib: charuco-intrinsic-calib.cpp
-	$(COMPILER) $^ -o $@ $(FLAGS) $(SO_DEPS) 
-
-aruco-extrinsic-calib: aruco-extrinsic-calib.cpp
-	$(COMPILER) $^ -o $@ $(FLAGS) $(SO_DEPS) 
+	rm -f *.o *.pb.cc *.pb.h charuco-intrinsic-calib aruco-extrinsic-calib

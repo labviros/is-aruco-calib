@@ -1,3 +1,4 @@
 aruco-extrinsic-calib
 charuco-intrinsic-calib
 *.png
+*.o
