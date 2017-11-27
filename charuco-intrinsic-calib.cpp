@@ -173,6 +173,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  buffer.loadFromFile("done.wav");
+  sound.play();
+
   cv::destroyWindow("Source");
   if (allIds.size() < 1) {
     is::critical("Not enough captures for calibration");

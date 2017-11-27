@@ -21,5 +21,5 @@ aruco marker). The transformation is then added to the respective CameraCalibrat
 
 Usage example:
 ```shell
-./aruco-extrinsic-calib --uri amqp://edge.is:30000 --camera 0 --dictionary 0 --marker 0 --marker-length 0.3 --axis-offset 0
+./aruco-extrinsic-calib --uri amqp://edge.is:30000 --camera 0 --dictionary 0 --marker 0 --marker-length 0.3 --axis-offset -0.15
 ```
