@@ -1,0 +1,7 @@
+[requires]
+is-msgs/[>=1.1.4]@is/stable
+is-wire/[>=1.1]@is/stable
+opencv/[>=3.3]@is/stable
+
+[generators]
+cmake
