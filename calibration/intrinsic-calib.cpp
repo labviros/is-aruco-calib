@@ -140,7 +140,7 @@ void save_images(std::string const& folder,
 
 void warn_lapack_slow() {
   std::string info = cv::getBuildInformation();
-  if (!std::regex_search(info, std::regex("Use Lapack:\\s+YES"))) {
+  if (!std::regex_search(info, std::regex("Lapack:\\s+YES"))) {
     is::warn("OpenCV not built with lapack, calibration can be slow");
   }
 }

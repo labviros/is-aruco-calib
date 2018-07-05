@@ -87,9 +87,9 @@ message CalibrationOptions {
   // folder to save/load calibration data, if uri is not specified images will be read from this folder
   string data_dir = 3;
   // camera frame id
-  string camera_id = 4;
+  int64 camera_id = 4;
   // world frame id
-  string world_id = 5;
+  int64 world_id = 5;
   //
   IntrinsicCalibrationOptions intrinsic = 6;
   //

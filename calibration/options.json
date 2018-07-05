@@ -1,8 +1,8 @@
 {
-  "camera_id": "7",
-  "world_id": "1003",
+  "camera_id": 7,
+  "world_id": 1003,
 
-  "uri": "amqp://10.10.2.11",
+  "uri": "amqp://10.10.2.24:30000",
   "topic": "CameraGateway.{}.Frame",
   "data_dir": "bristol/{}",
  

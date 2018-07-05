@@ -40,11 +40,11 @@ Usage example, run the produced binary passing the desired configuration file:
 ./build/bin/extrinsic-calib ./calibration/options.json
 ```
 
-Example configuration file (**./calibration/options.json**):
+Example configuration file (**./calibration/options.json**): The string "{}" is used as a wildcard for the camera_id. So in the example below the topic used will be "CameraGateway.7.Frame" for instance.
 ```json
 {
-  "camera_id": "7",
-  "world_id": "1003",
+  "camera_id": 7,
+  "world_id": 1003,
 
   "uri": "amqp://10.10.2.11",
   "topic": "CameraGateway.{}.Frame",
