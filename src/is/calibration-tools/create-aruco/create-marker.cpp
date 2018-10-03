@@ -1,27 +1,18 @@
+#include <google/protobuf/util/json_util.h>
 #include <fstream>
 #include <iostream>
+#include <is/msgs/io.hpp>
+#include <is/msgs/validate.hpp>
+#include <opencv2/aruco/charuco.hpp>
+#include <opencv2/highgui.hpp>
 #include <sstream>
-#include "google/protobuf/util/json_util.h"
-#include "is/msgs/io.hpp"
-#include "is/msgs/validate.hpp"
-#include "opencv2/aruco/charuco.hpp"
-#include "opencv2/highgui.hpp"
 #include "options.pb.h"
-#include "spdlog/fmt/fmt.h"
-
-void leave_on_error(is::wire::Status const& status) {
-  if (status.code() != is::wire::StatusCode::OK) {
-    std::cerr << status.why() << std::endl;
-    std::exit(-1);
-  }
-}
 
 int main(int argc, char* argv[]) {
-  std::string filename = (argc == 2) ? argv[1] : "options.json";
-
-  CreateMarker options;
-  leave_on_error(is::load(filename, &options));
-  leave_on_error(is::validate_message(options));
+  auto filename = (argc == 2) ? argv[1] : "options.json";
+  auto options = CreateMarker{};
+  is::load(filename, &options);
+  is::validate_message(options);
 
   cv::Mat image;
   if (options.has_charuco()) {

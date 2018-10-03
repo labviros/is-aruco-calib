@@ -1,6 +1,6 @@
 [requires]
-is-msgs/1.1.6@is/stable
-is-wire/1.1.3@is/stable
+is-msgs/1.1.8@is/stable
+is-wire/1.1.4@is/stable
 opencv/3.4.2@is/stable
 
 [generators]

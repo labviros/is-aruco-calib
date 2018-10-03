@@ -1,16 +1,15 @@
+#include <is/msgs/camera.pb.h>
+#include <is/msgs/common.pb.h>
 #include <chrono>
+#include <is/msgs/cv.hpp>
+#include <is/msgs/utils.hpp>
+#include <is/wire/core.hpp>
+#include <opencv2/aruco/charuco.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <regex>
 #include <vector>
-#include "is/msgs/camera.pb.h"
-#include "is/msgs/common.pb.h"
-#include "is/msgs/cv.hpp"
-#include "is/msgs/io.hpp"
-#include "is/msgs/validate.hpp"
-#include "is/wire/core.hpp"
-#include "opencv2/aruco/charuco.hpp"
-#include "opencv2/calib3d.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
 #include "options.pb.h"
 
 struct CharucoDetection {
@@ -146,13 +145,10 @@ void warn_lapack_slow() {
 }
 
 int main(int argc, char* argv[]) {
-  std::string filename = (argc == 2) ? argv[1] : "options.json";
-  auto leave_on_error = [](is::wire::Status const& status) {
-    if (status.code() != is::wire::StatusCode::OK) is::critical("{}", status);
-  };
-  CalibrationOptions opts;
-  leave_on_error(is::load(filename, &opts));
-  leave_on_error(is::validate_message(opts));
+  auto filename = (argc == 2) ? argv[1] : "options.json";
+  auto opts = CalibrationOptions{};
+  is::load(filename, &opts);
+  is::validate_message(opts);
   warn_lapack_slow();
 
   auto using_saved_images = opts.uri().empty();

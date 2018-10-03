@@ -1,25 +1,22 @@
+#include <is/msgs/camera.pb.h>
+#include <is/msgs/common.pb.h>
 #include <iostream>
+#include <is/msgs/cv.hpp>
+#include <is/msgs/io.hpp>
+#include <is/msgs/validate.hpp>
+#include <is/wire/core.hpp>
+#include <opencv2/aruco/charuco.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <vector>
-#include "is/msgs/camera.pb.h"
-#include "is/msgs/common.pb.h"
-#include "is/msgs/cv.hpp"
-#include "is/msgs/io.hpp"
-#include "is/msgs/validate.hpp"
-#include "is/wire/core.hpp"
-#include "opencv2/aruco/charuco.hpp"
-#include "opencv2/calib3d.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
 #include "options.pb.h"
 
 int main(int argc, char* argv[]) {
-  std::string filename = (argc == 2) ? argv[1] : "options.json";
-  auto leave_on_error = [](is::wire::Status const& status) {
-    if (status.code() != is::wire::StatusCode::OK) is::critical("{}", status);
-  };
+  auto filename = (argc == 2) ? argv[1] : "options.json";
+  auto opts = CalibrationOptions{};
+  is::load(filename, &opts);
 
-  CalibrationOptions opts;
-  leave_on_error(is::load(filename, &opts));
   auto eopts = opts.extrinsic();
   auto data_dir = fmt::format(opts.data_dir(), opts.camera_id());
   auto topic = fmt::format(opts.topic(), opts.camera_id());
@@ -38,7 +35,7 @@ int main(int argc, char* argv[]) {
   calibration_file = fmt::format("{}/{}.json", data_dir, calibration_file);
 
   is::vision::CameraCalibration calibration;
-  leave_on_error(is::load(calibration_file, &calibration));
+  is::load(calibration_file, &calibration);
   calibration.PrintDebugString();
   auto intrinsic = is::to_mat(*calibration.mutable_intrinsic());
   auto distortion = is::to_mat(*calibration.mutable_distortion());

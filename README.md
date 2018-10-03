@@ -15,32 +15,33 @@ Run the bootstrap script to get the necessary dependencies. Then, run the build 
 
 ## Creating board and markers
 
-To create markers the **create-marker** executable can be used. Configuration files to create a charuco board and a aruco marker can be found at **create/charuco.json** and **create/aruco.json** respectively.
+To create markers the **create-marker** executable can be used. Configuration files to create a charuco board and a aruco marker can be found at **etc/conf/create-charuco.json** and **etc/conf/create-aruco.json** respectively.
 
 Usage example, run the produced binary passing the desired configuration file:
 
 ```shell
-./build/bin/create-marker ./create/aruco.json
-./build/bin/create-marker ./create/charuco.json
+./build/src/is/calibration-tools/create-aruco/create-marker ./etc/conf/create-aruco.json
 ```
 
 ## Calibrating Cameras
 
-The executable **intrinsic-calib** computes the intrinsic and distortion parameters using a ChArUco marker and outputs the corresponding [CameraCalibration](https://github.com/labviros/is-msgs/blob/v1.1.4/is/msgs/camera.proto) object as a json file.
+The executable **calibrate-intrinsic** computes the intrinsic and distortion parameters using a ChArUco marker and outputs the corresponding [CameraCalibration](https://github.com/labviros/is-msgs/tree/v1.1.8/docs#is.vision.CameraCalibration) object as a json file.
 
 Usage example, run the produced binary passing the desired configuration file:
+
 ```shell
-./build/bin/intrinsic-calib ./calibration/options.json
+./build/src/is/calibration-tools/calibrate-aruco/calibrate-intrinsic ./etc/conf/calibrate-aruco.json
 ```
 
-The executable **extrinsinc-calib** computes the extrinsic parameters, that is, the transformation that can change poses from the camera frame to the world frame and vice-versa. The world frame of reference will coincide with the one of the aruco marker. The transformation is added to the respective [CameraCalibration](https://github.com/labviros/is-msgs/blob/v1.1.4/is/msgs/camera.proto) json file.
+The executable **calibrate-extrinsic** computes the extrinsic parameters, that is, the transformation that can change poses from the camera frame to the world frame and vice-versa. The world frame of reference will coincide with the one of the aruco marker. The transformation is added to the respective [CameraCalibration](https://github.com/labviros/is-msgs/tree/v1.1.8/docs#is.vision.CameraCalibration) json file.
 
 Usage example, run the produced binary passing the desired configuration file:
+
 ```shell
-./build/bin/extrinsic-calib ./calibration/options.json
+./build/src/is/calibration-tools/calibrate-aruco/calibrate-extrinsic ./etc/conf/calibrate-aruco.json
 ```
 
-Example configuration file (**./calibration/options.json**): The string "{}" is used as a wildcard for the camera_id. So in the example below the topic used will be "CameraGateway.7.Frame" for instance.
+Example configuration file (**./etc/conf/calibrate-aruco.json**): The string "{}" is used as a wildcard for the camera_id. So in the example below the topic used will be "CameraGateway.7.Frame" for instance.
 ```json
 {
   "camera_id": 7,
