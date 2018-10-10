@@ -7,10 +7,11 @@ opencv/3.4.2@is/stable
 cmake
 cmake_paths
 cmake_find_package
+virtualrunenv
 
 [options]
+is-wire:shared=True
+is-msgs:shared=True
 opencv:shared=True
 opencv:with_qt=True
 opencv:with_ffmpeg=True
-Qt:shared=True
-is-msgs:shared=True

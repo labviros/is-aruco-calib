@@ -13,6 +13,17 @@ Run the bootstrap script to get the necessary dependencies. Then, run the build 
 ./build.sh
 ```
 
+## Running
+
+When running any executable if you get an **"cannot open shared object file: No such file or directory"** error, you should activate the virtual env in order for the linker to find the libraries. Run the following command to do so:
+```shell
+. ./build/activate_run.sh
+```
+And then run the following command to restore your original environment when you are done:
+```shell
+. ./build/deactivate_run.sh
+```
+
 ## Creating board and markers
 
 To create markers the **create-marker** executable can be used. Configuration files to create a charuco board and a aruco marker can be found at **etc/conf/create-charuco.json** and **etc/conf/create-aruco.json** respectively.
