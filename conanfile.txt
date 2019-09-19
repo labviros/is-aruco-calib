@@ -1,6 +1,6 @@
 [requires]
-is-msgs/1.1.8@is/stable
-is-wire/1.1.4@is/stable
+is-msgs/1.1.10@is/stable
+is-wire/1.1.5@is/stable
 opencv/3.4.2@is/stable
 
 [generators]
@@ -10,7 +10,6 @@ cmake_find_package
 virtualrunenv
 
 [options]
-is-wire:shared=True
 is-msgs:shared=True
 opencv:shared=True
 opencv:with_qt=True
